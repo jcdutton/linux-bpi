@@ -62,7 +62,6 @@
 
 #define MTK_QRX_OFFSET		0x10
 
-#define MTK_MAX_RX_RING_NUM	4
 #define MTK_HW_LRO_DMA_SIZE	8
 
 #define	MTK_MAX_LRO_RX_LENGTH		(4096 * 3)
@@ -101,6 +100,11 @@
 
 /* Frame Engine Interrupt Grouping Register */
 #define MTK_FE_INT_GRP		0x20
+
+/* Frame Engine LRO auto-learn table info */
+#define MTK_FE_ALT_CF8		0x300
+#define MTK_FE_ALT_SGL_CFC	0x304
+#define MTK_FE_ALT_SEQ_CFC	0x308
 
 /* CDMP Ingress Control Register */
 #define MTK_CDMQ_IG_CTRL	0x1400
@@ -166,40 +170,148 @@
 #define MTK_CDME1_THRES		0x1658
 #define MTK_CDMM_THRES		0x165c
 
+#define MTK_PDMA_V2		BIT(4)
+
+
+#define PDMA_BASE_V2		0x6000
+#define QDMA_BASE_V2		0x4400
+
+#define PDMA_BASE		0x0800
+#define QDMA_BASE		0x1800
+
+/* PDMA RX Base Pointer Register */
+#define MTK_PRX_BASE_PTR0	(PDMA_BASE + 0x100)
+#define MTK_PRX_BASE_PTR_CFG(x)	(MTK_PRX_BASE_PTR0 + (x * 0x10))
+
+/* PDMA RX Maximum Count Register */
+#define MTK_PRX_MAX_CNT0	(MTK_PRX_BASE_PTR0 + 0x04)
+#define MTK_PRX_MAX_CNT_CFG(x)	(MTK_PRX_MAX_CNT0 + (x * 0x10))
+
+/* PDMA RX CPU Pointer Register */
+#define MTK_PRX_CRX_IDX0	(MTK_PRX_BASE_PTR0 + 0x08)
+#define MTK_PRX_CRX_IDX_CFG(x)	(MTK_PRX_CRX_IDX0 + (x * 0x10))
+
 /* PDMA HW LRO Control Registers */
-#define MTK_PDMA_LRO_CTRL_DW0	0x980
+#define BITS(m, n)			(~(BIT(m) - 1) & ((BIT(n) - 1) | BIT(n)))
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_MAX_RX_RING_NUM_V2		(8)
+#define MTK_HW_LRO_RING_NUM_V2		(4)
+#define IS_HW_LRO_RING_V2(ring_no)	(((ring_no) > 3) && ((ring_no) < 8))
+#define MTK_PDMA_LRO_CTRL_DW0_V2	(PDMA_BASE_V2 + 0x408)
+#define MTK_PDMA_LRO_CTRL_DW1_V2	(PDMA_BASE_V2 + 0x40c)
+#define MTK_PDMA_LRO_CTRL_DW2_V2	(PDMA_BASE_V2 + 0x410)
+#define MTK_PDMA_LRO_CTRL_DW3_V2	(PDMA_BASE_V2 + 0x414)
+#define MTK_LRO_ALT_SCORE_DELTA_V2	(PDMA_BASE_V2 + 0x41c)
+#define MTK_LRO_RX_RING0_CTRL_DW1_V2	(PDMA_BASE_V2 + 0x438)
+#define MTK_LRO_RX_RING0_CTRL_DW2_V2	(PDMA_BASE_V2 + 0x43c)
+#define MTK_LRO_RX_RING0_CTRL_DW3_V2	(PDMA_BASE_V2 + 0x440)
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_MAX_RX_RING_NUM		(4)
+#define MTK_HW_LRO_RING_NUM		(3)
+#define IS_HW_LRO_RING(ring_no)		(((ring_no) > 0) && ((ring_no) < 4))
+#define MTK_PDMA_LRO_CTRL_DW0		(PDMA_BASE + 0x180)
+#define MTK_PDMA_LRO_CTRL_DW1		(PDMA_BASE + 0x184)
+#define MTK_PDMA_LRO_CTRL_DW2		(PDMA_BASE + 0x188)
+#define MTK_PDMA_LRO_CTRL_DW3		(PDMA_BASE + 0x18c)
+#define MTK_LRO_ALT_SCORE_DELTA		(PDMA_BASE + 0x24c)
+#define MTK_LRO_RX_RING0_CTRL_DW1	(PDMA_BASE + 0x328)
+#define MTK_LRO_RX_RING0_CTRL_DW2	(PDMA_BASE + 0x32c)
+#define MTK_LRO_RX_RING0_CTRL_DW3	(PDMA_BASE + 0x330)
+
+
+#define IS_NORMAL_RING(ring_no)		((ring_no) == 0)
 #define MTK_LRO_EN			BIT(0)
+#define MTK_NON_LRO_MULTI_EN   		BIT(2)
+#define MTK_LRO_DLY_INT_EN		BIT(5)
+#define MTK_LRO_CRSN_BNW		BIT(6)
 #define MTK_L3_CKS_UPD_EN		BIT(7)
+#define MTK_ADMA_MODE			BIT(15)
 #define MTK_L3_CKS_UPD_EN_V2		BIT(19)
 #define MTK_LRO_ALT_PKT_CNT_MODE	BIT(21)
-#define MTK_LRO_RING_RELINQUISH_REQ	(0x7 << 26)
-#define MTK_LRO_RING_RELINQUISH_REQ_V2	(0xf << 24)
-#define MTK_LRO_RING_RELINQUISH_DONE	(0x7 << 29)
-#define MTK_LRO_RING_RELINQUISH_DONE_V2	(0xf << 28)
+#define MTK_LRO_CRSN_BNW_V2		BIT(22)
+#define MTK_LRO_L4_CTRL_PSH_EN		BIT(23)
+#define MTK_CTRL_DW0_SDL_OFFSET		(3)
+#define MTK_CTRL_DW0_SDL_MASK		BITS(3, 18)
 
-#define MTK_PDMA_LRO_CTRL_DW1	0x984
-#define MTK_PDMA_LRO_CTRL_DW2	0x988
-#define MTK_PDMA_LRO_CTRL_DW3	0x98c
-#define MTK_ADMA_MODE		BIT(15)
 #define MTK_LRO_MIN_RXD_SDL	(MTK_HW_LRO_SDL_REMAIN_ROOM << 16)
+
+#define MTK_LRO_RING_RELINQUISH_REQ_V2	(0xf << 24)
+#define MTK_LRO_RING_RELINQUISH_DONE_V2	(0xf << 28)
+#define MTK_LRO_RING_RELINQUISH_REQ	(0x7 << 26)
+#define MTK_LRO_RING_RELINQUISH_DONE	(0x7 << 29)
+
+/* PDMA HW LRO Control Registers */
+#define MTK_CTRL_DW0_SDL_OFFSET		(3)
 
 #define MTK_RX_DMA_LRO_EN	BIT(8)
 #define MTK_MULTI_EN		BIT(10)
 #define MTK_PDMA_SIZE_8DWORDS	(1 << 4)
 
+/* PDMA RSS Control Registers */
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_PDMA_RSS_GLO_CFG_V2		(PDMA_BASE_V2 + 0x800)
+#define MTK_RX_NAPI_NUM_V2		(2)
+#define MTK_MAX_IRQ_NUM_V2		(4)
+#define MTK_RSS_INDR_TABLE_DW0_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x50)
+#define MTK_RSS_INDR_TABLE_DW1_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x54)
+#define MTK_RSS_INDR_TABLE_DW2_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x58)
+#define MTK_RSS_INDR_TABLE_DW3_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x5C)
+#define MTK_RSS_INDR_TABLE_DW4_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x60)
+#define MTK_RSS_INDR_TABLE_DW5_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x64)
+#define MTK_RSS_INDR_TABLE_DW6_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x68)
+#define MTK_RSS_INDR_TABLE_DW7_V2	(MTK_PDMA_RSS_GLO_CFG_V2 + 0x6C)
+
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_PDMA_RSS_GLO_CFG		0x3000
+#define MTK_RX_NAPI_NUM			(1)
+#define MTK_MAX_IRQ_NUM			(3)
+#define MTK_RSS_INDR_TABLE_DW0		(MTK_PDMA_RSS_GLO_CFG + 0x50)
+#define MTK_RSS_INDR_TABLE_DW1		(MTK_PDMA_RSS_GLO_CFG + 0x54)
+#define MTK_RSS_INDR_TABLE_DW2		(MTK_PDMA_RSS_GLO_CFG + 0x58)
+#define MTK_RSS_INDR_TABLE_DW3		(MTK_PDMA_RSS_GLO_CFG + 0x5C)
+#define MTK_RSS_INDR_TABLE_DW4		(MTK_PDMA_RSS_GLO_CFG + 0x60)
+#define MTK_RSS_INDR_TABLE_DW5		(MTK_PDMA_RSS_GLO_CFG + 0x64)
+#define MTK_RSS_INDR_TABLE_DW6		(MTK_PDMA_RSS_GLO_CFG + 0x68)
+#define MTK_RSS_INDR_TABLE_DW7		(MTK_PDMA_RSS_GLO_CFG + 0x6C)
+
+#define MTK_RSS_RING1			(1)
+#define MTK_RSS_EN			BIT(0)
+#define MTK_RSS_CFG_REQ			BIT(2)
+#define MTK_RSS_IPV6_STATIC_HASH	(0x7 << 8)
+#define MTK_RSS_IPV4_STATIC_HASH	(0x7 << 12)
+#define MTK_RSS_INDR_TABLE_SIZE4	0x44444444
+
 /* PDMA Global Configuration Register */
+#define MTK_PDMA_GLO_CFG	(PDMA_BASE + 0x204)
+#define MTK_PDMA_GLO_CFG_V2	(PDMA_BASE_V2 + 0x204)
+#define MTK_RX_DMA_LRO_EN	BIT(8)
+#define MTK_MULTI_EN		BIT(10)
+#define MTK_PDMA_SIZE_8DWORDS	(1 << 4)
+
+/* PDMA Global Configuration Register */
+#define MTK_PDMA_RX_CFG		(PDMA_BASE + 0x210)
+#define MTK_PDMA_RX_CFG_V2	(PDMA_BASE_V2 + 0x210)
 #define MTK_PDMA_LRO_SDL	0x3000
 #define MTK_RX_CFG_SDL_OFFSET	16
 
 /* PDMA Reset Index Register */
+#define MTK_PDMA_RST_IDX	(PDMA_BASE + 0x208)
+#define MTK_PDMA_RST_IDX_V2	(PDMA_BASE_V2 + 0x208)
 #define MTK_PST_DRX_IDX0	BIT(16)
 #define MTK_PST_DRX_IDX_CFG(x)	(MTK_PST_DRX_IDX0 << (x))
 
 /* PDMA Delay Interrupt Register */
+#define MTK_PDMA_DELAY_INT		(PDMA_BASE + 0x20c)
+#define MTK_PDMA_DELAY_INT_V2		(PDMA_BASE_V2 + 0x20c)
 #define MTK_PDMA_DELAY_RX_MASK		GENMASK(15, 0)
 #define MTK_PDMA_DELAY_RX_EN		BIT(15)
+#define MTK_PDMA_DELAY_RX_PINT		4
 #define MTK_PDMA_DELAY_RX_PINT_SHIFT	8
+#define MTK_PDMA_DELAY_RX_PTIME		4
 #define MTK_PDMA_DELAY_RX_PTIME_SHIFT	0
+#define MTK_PDMA_DELAY_RX_DELAY		\
+	(MTK_PDMA_DELAY_RX_EN | MTK_PDMA_DELAY_RX_PTIME | \
+	(MTK_PDMA_DELAY_RX_PINT << MTK_PDMA_DELAY_RX_PINT_SHIFT))
 
 #define MTK_PDMA_DELAY_TX_MASK		GENMASK(31, 16)
 #define MTK_PDMA_DELAY_TX_EN		BIT(31)
@@ -209,32 +321,130 @@
 #define MTK_PDMA_DELAY_PINT_MASK	0x7f
 #define MTK_PDMA_DELAY_PTIME_MASK	0xff
 
+/* PDMA Interrupt Status Register */
+#define MTK_PDMA_INT_STATUS	(PDMA_BASE + 0x220)
+#define MTK_PDMA_INT_STATUS_V2	(PDMA_BASE_V2 + 0x220)
+
+/* PDMA Interrupt Mask Register */
+#define MTK_PDMA_INT_MASK	(PDMA_BASE + 0x228)
+#define MTK_PDMA_INT_MASK_V2	(PDMA_BASE_V2 + 0x228)
+
+/* PDMA Interrupt grouping registers */
+#define MTK_PDMA_INT_GRP1	(PDMA_BASE + 0x250)
+#define MTK_PDMA_INT_GRP1_V2	(PDMA_BASE_V2 + 0x250)
+#define MTK_PDMA_INT_GRP2	(PDMA_BASE + 0x254)
+#define MTK_PDMA_INT_GRP2_V2	(PDMA_BASE_V2 + 0x254)
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_PDMA_INT_GRP3_V2	(PDMA_BASE_V2 + 0x258)
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_PDMA_INT_GRP3	(PDMA_BASE + 0x22c)
+
+
+#define MTK_LRO_RX1_DLY_INT	0xa70
+#define MTK_MAX_DELAY_INT	0x8f0f
+#define MTK_MAX_DELAY_INT_V2	0x8f0f8f0f
+
 /* PDMA HW LRO Alter Flow Delta Register */
 #define MTK_PDMA_LRO_ALT_SCORE_DELTA	0xa4c
 
 /* PDMA HW LRO IP Setting Registers */
-#define MTK_LRO_RX_RING0_DIP_DW0	0xb04
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_LRO_RX_RING0_DIP_DW0_V2	(PDMA_BASE_V2 + 0x414)
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_LRO_RX_RING0_DIP_DW0	(PDMA_BASE + 0x304)
+
+
 #define MTK_LRO_DIP_DW0_CFG(x)		(MTK_LRO_RX_RING0_DIP_DW0 + (x * 0x40))
+#define MTK_LRO_DIP_DW0_CFG_V2(x)	(MTK_LRO_RX_RING0_DIP_DW0_V2 + (x * 0x40))
 #define MTK_RING_MYIP_VLD		BIT(9)
 
+/* PDMA HW LRO ALT Debug Registers */
+#define MTK_LRO_ALT_DBG			(PDMA_BASE + 0x440)
+#define MTK_LRO_ALT_DBG_V2		(PDMA_BASE_V2 + 0x440)
+#define MTK_LRO_ALT_INDEX_OFFSET	(8)
+
+/* PDMA HW LRO ALT Data Registers */
+#define MTK_LRO_ALT_DBG_DATA		(PDMA_BASE + 0x444)
+#define MTK_LRO_ALT_DBG_DATA_V2		(PDMA_BASE_V2 + 0x444)
+
 /* PDMA HW LRO Ring Control Registers */
-#define MTK_LRO_RX_RING0_CTRL_DW1	0xb28
-#define MTK_LRO_RX_RING0_CTRL_DW2	0xb2c
-#define MTK_LRO_RX_RING0_CTRL_DW3	0xb30
+//#define MTK_LRO_RX_RING0_CTRL_DW1	0xb28
+//#define MTK_LRO_RX_RING0_CTRL_DW2	0xb2c
+//#define MTK_LRO_RX_RING0_CTRL_DW3	0xb30
 #define MTK_LRO_CTRL_DW1_CFG(x)		(MTK_LRO_RX_RING0_CTRL_DW1 + (x * 0x40))
 #define MTK_LRO_CTRL_DW2_CFG(x)		(MTK_LRO_RX_RING0_CTRL_DW2 + (x * 0x40))
 #define MTK_LRO_CTRL_DW3_CFG(x)		(MTK_LRO_RX_RING0_CTRL_DW3 + (x * 0x40))
 #define MTK_RING_AGE_TIME_L		((MTK_HW_LRO_AGE_TIME & 0x3ff) << 22)
 #define MTK_RING_AGE_TIME_H		((MTK_HW_LRO_AGE_TIME >> 10) & 0x3f)
+#define MTK_RING_PSE_MODE        	(1 << 6)
 #define MTK_RING_AUTO_LERAN_MODE	(3 << 6)
 #define MTK_RING_VLD			BIT(8)
 #define MTK_RING_MAX_AGG_TIME		((MTK_HW_LRO_AGG_TIME & 0xffff) << 10)
 #define MTK_RING_MAX_AGG_CNT_L		((MTK_HW_LRO_MAX_AGG_CNT & 0x3f) << 26)
 #define MTK_RING_MAX_AGG_CNT_H		((MTK_HW_LRO_MAX_AGG_CNT >> 6) & 0x3)
 
+/* LRO_RX_RING_CTRL_DW masks */
+#define MTK_LRO_RING_AGG_TIME_MASK	BITS(10, 25)
+#define MTK_LRO_RING_AGG_CNT_L_MASK	BITS(26, 31)
+#define MTK_LRO_RING_AGG_CNT_H_MASK	BITS(0, 1)
+#define MTK_LRO_RING_AGE_TIME_L_MASK	BITS(22, 31)
+#define MTK_LRO_RING_AGE_TIME_H_MASK	BITS(0, 5)
+
+/* LRO_RX_RING_CTRL_DW0 offsets */
+#define MTK_RX_IPV6_FORCE_OFFSET	(0)
+#define MTK_RX_IPV4_FORCE_OFFSET	(1)
+
+/* LRO_RX_RING_CTRL_DW1 offsets  */
+#define MTK_LRO_RING_AGE_TIME_L_OFFSET	(22)
+
+/* LRO_RX_RING_CTRL_DW2 offsets  */
+#define MTK_LRO_RING_AGE_TIME_H_OFFSET	(0)
+#define MTK_RX_MODE_OFFSET		(6)
+#define MTK_RX_PORT_VALID_OFFSET	(8)
+#define MTK_RX_MYIP_VALID_OFFSET	(9)
+#define MTK_LRO_RING_AGG_TIME_OFFSET	(10)
+#define MTK_LRO_RING_AGG_CNT_L_OFFSET	(26)
+
+/* LRO_RX_RING_CTRL_DW3 offsets  */
+#define MTK_LRO_RING_AGG_CNT_H_OFFSET	(0)
+
+/* LRO_RX_RING_STP_DTP_DW offsets */
+#define MTK_RX_TCP_DEST_PORT_OFFSET	(0)
+#define MTK_RX_TCP_SRC_PORT_OFFSET	(16)
+
 /* QDMA TX Queue Configuration Registers */
+#define MTK_QTX_CFG(x)		(QDMA_BASE + (x * 0x10))
+#define MTK_QTX_CFG_V2(x)	(QDMA_BASE_V2 + (x * 0x10))
 #define MTK_QTX_OFFSET		0x10
 #define QDMA_RES_THRES		4
+
+/* QDMA TX Queue Scheduler Registers */
+#define MTK_QTX_SCH(x)		(QDMA_BASE + 4 + (x * 0x10))
+#define MTK_QTX_SCH_V2(x)		(QDMA_BASE_V2 + 4 + (x * 0x10))
+
+/* QDMA RX Base Pointer Register */
+#define MTK_QRX_BASE_PTR0	(QDMA_BASE + 0x100)
+#define MTK_QRX_BASE_PTR_CFG(x)	(MTK_QRX_BASE_PTR0 + ((x) * 0x10))
+#define MTK_QRX_BASE_PTR0_V2	(QDMA_BASE_V2 + 0x100)
+#define MTK_QRX_BASE_PTR_CFG_V2(x)	(MTK_QRX_BASE_PTR0_V2 + ((x) * 0x10))
+
+/* QDMA RX Maximum Count Register */
+#define MTK_QRX_MAX_CNT0	(QDMA_BASE + 0x104)
+#define MTK_QRX_MAX_CNT_CFG(x)	(MTK_QRX_MAX_CNT0 + ((x) * 0x10))
+#define MTK_QRX_MAX_CNT0_V2	(QDMA_BASE_V2 + 0x104)
+#define MTK_QRX_MAX_CNT_CFG_V2(x)	(MTK_QRX_MAX_CNT0_V2 + ((x) * 0x10))
+
+/* QDMA RX CPU Pointer Register */
+#define MTK_QRX_CRX_IDX0	(QDMA_BASE + 0x108)
+#define MTK_QRX_CRX_IDX_CFG(x)	(MTK_QRX_CRX_IDX0 + ((x) * 0x10))
+#define MTK_QRX_CRX_IDX0_V2	(QDMA_BASE_V2 + 0x108)
+#define MTK_QRX_CRX_IDX_CFG_V2(x)	(MTK_QRX_CRX_IDX0_V2 + ((x) * 0x10))
+
+
+/* QDMA RX DMA Pointer Register */
+#define MTK_QRX_DRX_IDX0	(QDMA_BASE + 0x10c)
+#define MTK_QRX_DRX_IDX0_V2	(QDMA_BASE_V2 + 0x10c)
+
 
 /* QDMA Tx Queue Scheduler Configuration Registers */
 #define MTK_QTX_SCH_TX_SEL		BIT(31)
@@ -254,15 +464,20 @@
 #define MTK_QDMA_TX_SCH_MAX_WFQ		BIT(15)
 
 /* QDMA Global Configuration Register */
+#define MTK_QDMA_GLO_CFG	(QDMA_BASE + 0x204)
+#define MTK_QDMA_GLO_CFG_V2	(QDMA_BASE_V2 + 0x204)
 #define MTK_RX_2B_OFFSET	BIT(31)
 #define MTK_RX_BT_32DWORDS	(3 << 11)
 #define MTK_NDP_CO_PRO		BIT(10)
 #define MTK_TX_WB_DDONE		BIT(6)
 #define MTK_TX_BT_32DWORDS	(3 << 4)
+#define MTK_DMA_SIZE_16DWORDS	(2 << 4)
+#define MTK_DMA_SIZE_32DWORDS	(3 << 4)
 #define MTK_RX_DMA_BUSY		BIT(3)
 #define MTK_TX_DMA_BUSY		BIT(1)
 #define MTK_RX_DMA_EN		BIT(2)
 #define MTK_TX_DMA_EN		BIT(0)
+#define MTK_DMA_BUSY_TIMEOUT	HZ
 #define MTK_DMA_BUSY_TIMEOUT_US	1000000
 
 /* QDMA V2 Global Configuration Register */
@@ -273,40 +488,112 @@
 #define MTK_MUTLI_CNT		(0x4 << 12)
 #define MTK_LEAKY_BUCKET_EN	BIT(11)
 
+/* QDMA Reset Index Register */
+#define MTK_QDMA_RST_IDX	(QDMA_BASE + 0x208)
+#define MTK_QDMA_RST_IDX_V2	(QDMA_BASE_V2 + 0x208)
+
+/* QDMA Delay Interrupt Register */
+#define MTK_QDMA_DELAY_INT	(QDMA_BASE + 0x20c)
+#define MTK_QDMA_DELAY_INT_V2	(QDMA_BASE_V2 + 0x20c)
+
 /* QDMA Flow Control Register */
+#define MTK_QDMA_FC_THRES	(QDMA_BASE + 0x210)
+#define MTK_QDMA_FC_THRES_V2	(QDMA_BASE_V2 + 0x210)
 #define FC_THRES_DROP_MODE	BIT(20)
 #define FC_THRES_DROP_EN	(7 << 16)
 #define FC_THRES_MIN		0x4444
 
 /* QDMA Interrupt Status Register */
+#define MTK_QDMA_INT_STATUS	(QDMA_BASE + 0x218)
+#define MTK_QDMA_INT_STATUS_V2	(QDMA_BASE_V2 + 0x218)
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_RX_DONE_INT_V2(ring_no)		\
+	((ring_no)? BIT(16 + (ring_no)) : BIT(14))
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_RX_DONE_INT(ring_no)		\
+	((ring_no)? BIT(24 + (ring_no)) : BIT(30))
+
+
 #define MTK_RX_DONE_DLY		BIT(30)
 #define MTK_TX_DONE_DLY		BIT(28)
 #define MTK_RX_DONE_INT3	BIT(19)
 #define MTK_RX_DONE_INT2	BIT(18)
 #define MTK_RX_DONE_INT1	BIT(17)
 #define MTK_RX_DONE_INT0	BIT(16)
+//#define MTK_RX_DONE_INT_V2	BIT(14)
+#define MTK_CDM_TXFIFO_RDY	BIT(7)
 #define MTK_TX_DONE_INT3	BIT(3)
 #define MTK_TX_DONE_INT2	BIT(2)
 #define MTK_TX_DONE_INT1	BIT(1)
 #define MTK_TX_DONE_INT0	BIT(0)
-#define MTK_RX_DONE_INT		MTK_RX_DONE_DLY
 #define MTK_TX_DONE_INT		MTK_TX_DONE_DLY
 
-#define MTK_RX_DONE_INT_V2	BIT(14)
-
-#define MTK_CDM_TXFIFO_RDY	BIT(7)
-
 /* QDMA Interrupt grouping registers */
+#define MTK_QDMA_INT_GRP1	(QDMA_BASE + 0x220)
+#define MTK_QDMA_INT_GRP2	(QDMA_BASE + 0x224)
+#define MTK_QDMA_INT_GRP1_V2	(QDMA_BASE_V2 + 0x220)
+#define MTK_QDMA_INT_GRP2_V2	(QDMA_BASE_V2 + 0x224)
+
 #define MTK_RLS_DONE_INT	BIT(0)
 
+/* QDMA Interrupt Status Register */
+#define MTK_QDMA_INT_MASK	(QDMA_BASE + 0x21c)
+#define MTK_QDMA_INT_MASK_V2	(QDMA_BASE_V2 + 0x21c)
+
+/* QDMA Interrupt Mask Register */
+#define MTK_QDMA_HRED2		(QDMA_BASE + 0x244)
+#define MTK_QDMA_HRED2_V2	(QDMA_BASE_V2 + 0x244)
+
+/* QDMA TX Forward CPU Pointer Register */
+#define MTK_QTX_CTX_PTR		(QDMA_BASE +0x300)
+#define MTK_QTX_CTX_PTR_V2	(QDMA_BASE_V2 +0x300)
+
+/* QDMA TX Forward DMA Pointer Register */
+#define MTK_QTX_DTX_PTR		(QDMA_BASE +0x304)
+#define MTK_QTX_DTX_PTR_V2	(QDMA_BASE_V2 +0x304)
+
+/* QDMA TX Release CPU Pointer Register */
+#define MTK_QTX_CRX_PTR		(QDMA_BASE +0x310)
+#define MTK_QTX_CRX_PTR_V2	(QDMA_BASE_V2 +0x310)
+
+/* QDMA TX Release DMA Pointer Register */
+#define MTK_QTX_DRX_PTR		(QDMA_BASE +0x314)
+#define MTK_QTX_DRX_PTR_V2	(QDMA_BASE_V2 +0x314)
+
+/* QDMA FQ Head Pointer Register */
+#define MTK_QDMA_FQ_HEAD	(QDMA_BASE +0x320)
+#define MTK_QDMA_FQ_HEAD_V2	(QDMA_BASE_V2 +0x320)
+
+/* QDMA FQ Head Pointer Register */
+#define MTK_QDMA_FQ_TAIL_V2	(QDMA_BASE_V2 +0x324)
+
+/* QDMA FQ Free Page Counter Register */
+#define MTK_QDMA_FQ_CNT		(QDMA_BASE +0x328)
+#define MTK_QDMA_FQ_CNT_V2	(QDMA_BASE_V2 +0x328)
+
+/* QDMA FQ Free Page Buffer Length Register */
+#define MTK_QDMA_FQ_BLEN	(QDMA_BASE +0x32c)
+#define MTK_QDMA_FQ_BLEN_V2	(QDMA_BASE_V2 +0x32c)
+
+/* GMA1 Received Good Byte Count Register */
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_GDM1_TX_GBCNT_V2	0x1C00
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_GDM1_TX_GBCNT	0x2400
+
+#define MTK_STAT_OFFSET		0x40
+
 /* QDMA TX NUM */
+#define MTK_QDMA_TX_NUM		16
+#define MTK_QDMA_TX_MASK	((MTK_QDMA_TX_NUM) - 1)
+#define QID_LOW_BITS(x)         ((x) & 0xf)
+#define QID_HIGH_BITS(x)        ((((x) >> 4) & 0x3) << 20)
 #define QID_BITS_V2(x)		(((x) & 0x3f) << 16)
 #define MTK_QDMA_GMAC2_QID	8
 
-#define MTK_TX_DMA_BUF_SHIFT	8
-
 /* QDMA V2 descriptor txd6 */
 #define TX_DMA_INS_VLAN_V2	BIT(16)
+
 /* QDMA V2 descriptor txd5 */
 #define TX_DMA_CHKSUM_V2	(0x7 << 28)
 #define TX_DMA_TSO_V2		BIT(31)
@@ -317,6 +604,25 @@
 #define TX_DMA_FPORT_SHIFT_V2	8
 #define TX_DMA_FPORT_MASK_V2	0xf
 #define TX_DMA_SWC_V2		BIT(30)
+
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_TX_DMA_BUF_LEN_V2      0xffff
+#define MTK_TX_DMA_BUF_SHIFT_V2    8
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_TX_DMA_BUF_LEN      0x3fff
+#define MTK_TX_DMA_BUF_SHIFT    16
+
+
+/* MEDIATEK_NETSYS_V2 */
+#define MTK_RX_DMA_BUF_LEN_V2      0xffff
+#define MTK_RX_DMA_BUF_SHIFT_V2    8
+#define RX_DMA_SPORT_SHIFT_V2      26
+#define RX_DMA_SPORT_MASK_V2       0xf
+/* MEDIATEK_NETSYS_V1 */
+#define MTK_RX_DMA_BUF_LEN      0x3fff
+#define MTK_RX_DMA_BUF_SHIFT    16
+#define RX_DMA_SPORT_SHIFT      19
+#define RX_DMA_SPORT_MASK       0x7
 
 /* QDMA descriptor txd4 */
 #define TX_DMA_CHKSUM		(0x7 << 29)
@@ -351,6 +657,8 @@
 #define RX_DMA_LSO		BIT(30)
 #define RX_DMA_PREP_PLEN0(x)	(((x) & eth->soc->txrx.dma_max_len) << eth->soc->txrx.dma_len_offset)
 #define RX_DMA_GET_PLEN0(x)	(((x) >> eth->soc->txrx.dma_len_offset) & eth->soc->txrx.dma_max_len)
+#define RX_DMA_GET_AGG_CNT(_x)	(((_x) >> 2) & 0xff)
+#define RX_DMA_GET_REV(_x)	(((_x) >> 10) & 0x1f)
 #define RX_DMA_VTAG		BIT(15)
 #define RX_DMA_ADDR64_MASK	GENMASK(3, 0)
 #if IS_ENABLED(CONFIG_64BIT)
@@ -375,7 +683,7 @@
 /* QDMA descriptor rxd4 */
 #define RX_DMA_L4_VALID		BIT(24)
 #define RX_DMA_L4_VALID_PDMA	BIT(30)		/* when PDMA is used */
-#define RX_DMA_SPECIAL_TAG	BIT(22)
+#define RX_DMA_SPECIAL_TAG	BIT(22) 	/* switch header in packet */
 
 /* PDMA descriptor rxd5 */
 #define MTK_RXD5_FOE_ENTRY	GENMASK(14, 0)
@@ -573,6 +881,47 @@
 /* ethernet reset check idle register */
 #define ETHSYS_FE_RST_CHK_IDLE_EN	0x28
 
+/* SGMII subsystem config registers */
+/* Register to auto-negotiation restart */
+#define SGMSYS_PCS_CONTROL_1	0x0
+#define SGMII_AN_RESTART	BIT(9)
+#define SGMII_ISOLATE		BIT(10)
+#define SGMII_AN_ENABLE		BIT(12)
+#define SGMII_LINK_STATYS	BIT(18)
+#define SGMII_AN_ABILITY	BIT(19)
+#define SGMII_AN_COMPLETE	BIT(21)
+#define SGMII_PCS_FAULT		BIT(23)
+#define SGMII_AN_EXPANSION_CLR	BIT(30)
+
+/* Register to programmable link timer, the unit in 2 * 8ns */
+#define SGMSYS_PCS_LINK_TIMER	0x18
+#define SGMII_LINK_TIMER_DEFAULT	(0x186a0 & GENMASK(19, 0))
+
+/* Register to control remote fault */
+#define SGMSYS_SGMII_MODE		0x20
+#define SGMII_IF_MODE_BIT0		BIT(0)
+#define SGMII_SPEED_DUPLEX_AN		BIT(1)
+#define SGMII_SPEED_10			0x0
+#define SGMII_SPEED_100			BIT(2)
+#define SGMII_SPEED_1000		BIT(3)
+#define SGMII_DUPLEX_FULL		BIT(4)
+#define SGMII_IF_MODE_BIT5		BIT(5)
+#define SGMII_REMOTE_FAULT_DIS		BIT(8)
+#define SGMII_CODE_SYNC_SET_VAL		BIT(9)
+#define SGMII_CODE_SYNC_SET_EN		BIT(10)
+#define SGMII_SEND_AN_ERROR_EN		BIT(11)
+#define SGMII_IF_MODE_MASK		GENMASK(5, 1)
+
+/* Register to set SGMII speed, ANA RG_ Control Signals III*/
+#define SGMSYS_ANA_RG_CS3	0x2028
+#define RG_PHY_SPEED_MASK	(BIT(2) | BIT(3))
+#define RG_PHY_SPEED_1_25G	0x0
+#define RG_PHY_SPEED_3_125G	BIT(2)
+
+/* Register to power up QPHY */
+#define SGMSYS_QPHY_PWR_STATE_CTRL 0xe8
+#define	SGMII_PHYA_PWD		BIT(4)
+
 /* ethernet dma channel agent map */
 #define ETHSYS_DMA_AG_MAP	0x408
 #define ETHSYS_DMA_AG_MAP_PDMA	BIT(0)
@@ -636,6 +985,11 @@
 #define MTK_STAT_OFFSET_V3	0x80
 #define MTK_GDM_RX_FC		0x24
 #define MTK_GDM_RX_FC_OFFSET(eth, i)	(i * (mtk_is_netsys_v3_or_greater(eth) ? MTK_STAT_OFFSET_V3 : MTK_STAT_OFFSET) + MTK_GDM_RX_FC)
+
+/*MDIO control*/
+#define MII_MMD_ACC_CTL_REG             0x0d
+#define MII_MMD_ADDR_DATA_REG           0x0e
+#define MMD_OP_MODE_DATA BIT(14)
 
 struct mtk_rx_dma {
 	unsigned int rxd1;
@@ -962,6 +1316,20 @@ struct mtk_rx_ring {
 	struct xdp_rxq_info xdp_q;
 };
 
+/* struct mtk_napi -	This is the structure holding NAPI-related information,
+ *			and a mtk_napi struct is binding to one interrupt group
+ * @napi:		The NAPI struct
+ * @rx_ring:		Pointer to the memory holding info about the RX ring
+ * @irq_grp_idx:	The index indicates which interrupt group that this
+ *			mtk_napi is binding to
+ */
+struct mtk_napi {
+	struct napi_struct	napi;
+	struct mtk_eth		*eth;
+	struct mtk_rx_ring	*rx_ring;
+	u32			irq_grp_no;
+};
+
 enum mkt_eth_capabilities {
 	MTK_RGMII_BIT = 0,
 	MTK_TRGMII_BIT,
@@ -974,6 +1342,7 @@ enum mkt_eth_capabilities {
 	MTK_INFRA_BIT,
 	MTK_SHARED_SGMII_BIT,
 	MTK_HWLRO_BIT,
+	MTK_RSS_BIT,
 	MTK_SHARED_INT_BIT,
 	MTK_TRGMII_MT7621_CLK_BIT,
 	MTK_QDMA_BIT,
@@ -1309,7 +1678,8 @@ struct mtk_eth {
 	struct net_device		dummy_dev;
 	struct net_device		*netdev[MTK_MAX_DEVS];
 	struct mtk_mac			*mac[MTK_MAX_DEVS];
-	int				irq[3];
+	//int				irq[3];
+	int				irq[MTK_MAX_IRQ_NUM];
 	u32				msg_enable;
 	unsigned long			sysclk;
 	struct regmap			*ethsys;
@@ -1323,6 +1693,7 @@ struct mtk_eth {
 	struct mtk_rx_ring		rx_ring_qdma;
 	struct napi_struct		tx_napi;
 	struct napi_struct		rx_napi;
+	//struct mtk_napi			rx_napi[MTK_RX_NAPI_NUM];
 	void				*scratch_ring;
 	dma_addr_t			phy_scratch_ring;
 	void				*scratch_head;
